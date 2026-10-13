@@ -1,0 +1,26 @@
+customer_id,full_name,email,city,segment
+1,Aarav Kumar,aarav1@mail.com,Bengaluru,Retail
+2,Diya Kumar,diya2@mail.com,Bengaluru,Online
+3,Kabir Kumar,kabir3@mail.com,Bengaluru,Retail
+4,Meera Kumar,meera4@mail.com,Bengaluru,Retail
+5,Rohan Kumar,rohan5@mail.com,Bengaluru,Online
+6,Ananya Kumar,ananya6@work.com,Mysuru,Online
+7,Vikram Kumar,vikram7@work.com,Bengaluru,Retail
+8,Isha Kumar,isha8@work.com,Mysuru,Corporate
+9,Arjun Kumar,arjun9@mail.com,Mumbai,Retail
+10,Sneha Kumar,sneha10@mail.com,Bengaluru,Retail
+11,Rahul Kumar,rahul11@mail.com,Delhi,Corporate
+12,Priya Kumar,priya12@mail.com,Mysuru,Online
+13,Karan Kumar,karan13@mail.com,Mysuru,Retail
+14,Neha Kumar,neha14@mail.com,Pune,Online
+15,Aditya Kumar,aditya15@mail.com,Delhi,Retail
+16,Pooja Kumar,pooja16@mail.com,Delhi,Online
+17,Suresh Kumar,suresh17@mail.com,Mumbai,Retail
+18,Lakshmi Kumar,lakshmi18@mail.com,Bengaluru,Retail
+19,Manoj Kumar,manoj19@mail.com,Delhi,Retail
+20,Divya Kumar,divya20@mail.com,Chennai,Corporate
+21,Nikhil Kumar,nikhil21@mail.com,Bengaluru,Online
+22,Tara Kumar,tara22@mail.com,Mysuru,Online
+23,Varun Kumar,varun23@mail.com,Chennai,Online
+24,Zoya Kumar,zoya24@mail.com,Pune,Retail
+25,Harsh Kumar,harsh25@mail.com,Mysuru,Online
