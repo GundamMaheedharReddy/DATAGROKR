@@ -1,0 +1,4 @@
+# Keep LF endings so hooks and scripts work on Windows (Git Bash) too
+* text=auto
+*.sh text eol=lf
+hooks/* text eol=lf
