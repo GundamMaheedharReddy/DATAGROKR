@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# pre-commit hook: runs before every `git commit`.
+#   1. Blocks direct commits to protected branches (main / master / develop)
+#   2. Blocks whitespace errors, oversized files, debugger statements, leaked secrets
+#   3. Lints staged Python files (flake8, if installed)
+#   4. Runs the test-suite
+# Bypass (emergencies only):  GITFLOW_ALLOW_PROTECTED=1  |  SKIP_TESTS=1  |  git commit --no-verify
+set -u
+
+fail() { echo "✖ pre-commit: $*" >&2; exit 1; }
+ok()   { echo "✔ pre-commit: $*"; }
+
+PY="$(command -v python3 || command -v python || true)"
+
+# --- 1. protected branches -------------------------------------------------
+branch="$(git symbolic-ref --short -q HEAD || true)"
+if [ "${GITFLOW_ALLOW_PROTECTED:-0}" != "1" ]; then
+  case "$branch" in
+    main|master|develop)
+      fail "direct commits to '$branch' are blocked. Use a feature/*, bugfix/*, release/* or hotfix/* branch."
+      ;;
+  esac
+fi
+ok "branch '${branch:-detached}' is allowed"
+
+# --- 2. content checks -----------------------------------------------------
+git diff --cached --check || fail "whitespace errors found (see above)"
+
+staged="$(git diff --cached --name-only --diff-filter=ACM)"
+pyfiles=""
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+  [ "$size" -gt 1048576 ] && fail "$f is larger than 1 MB"
+  case "$f" in
+    hooks/*) continue ;;   # don't scan the hook scripts themselves
+  esac
+  if git show ":$f" | grep -qE 'AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'; then
+    fail "possible secret/credential in $f"
+  fi
+  case "$f" in
+    *.py)
+      pyfiles="$pyfiles $f"
+      if git show ":$f" | grep -nE '^[[:space:]]*(breakpoint\(\)|import pdb|pdb\.set_trace\(\))'; then
+        fail "debugger statement left in $f"
+      fi
+      ;;
+  esac
+done <<< "$staged"
+ok "content checks passed"
+
+# --- 3. lint ---------------------------------------------------------------
+if [ -n "$pyfiles" ] && [ -n "$PY" ] && "$PY" -m flake8 --version >/dev/null 2>&1; then
+  # shellcheck disable=SC2086
+  "$PY" -m flake8 $pyfiles || fail "flake8 found problems"
+  ok "flake8 clean"
+fi
+
+# --- 4. tests --------------------------------------------------------------
+if [ -n "$pyfiles" ] && [ "${SKIP_TESTS:-0}" != "1" ] && [ -n "$PY" ]; then
+  if "$PY" -c "import pytest" >/dev/null 2>&1; then
+    out="$("$PY" -m pytest -q -x 2>&1)" || { echo "$out" | tail -n 20; fail "tests failed"; }
+  else
+    out="$("$PY" -m unittest discover -s tests -t . 2>&1)" || { echo "$out" | tail -n 20; fail "tests failed"; }
+  fi
+  ok "tests passed"
+fi
+exit 0
