@@ -1,0 +1,52 @@
+name: Release
+
+# Runs when a version tag such as v1.0.0 is pushed (done on main after a release/hotfix merge)
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write   # needed to create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tag must be on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::Tag $GITHUB_REF_NAME is not on main"; exit 1; }
+
+      - name: Tag must match app.__version__
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          CODE_VERSION="$(python -c 'import app; print(app.__version__)')"
+          echo "tag=$VERSION  code=$CODE_VERSION"
+          [ "$VERSION" = "$CODE_VERSION" ] \
+            || { echo "::error::Tag $VERSION != app.__version__ $CODE_VERSION"; exit 1; }
+
+      - name: Run tests
+        run: |
+          pip install -r requirements-dev.txt
+          python -m pytest -q
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '/^## \[/{p = index($0, "[" v "]") > 0; next} p' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "No notes found for $VERSION" > notes.md
+          cat notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
